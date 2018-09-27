@@ -6,12 +6,12 @@ class Model(object):
 
   def __init__(self, user_count, item_count, cate_count, cate_list):
 
-    self.u = tf.placeholder(tf.int32, [None,]) # [B]
-    self.i = tf.placeholder(tf.int32, [None,]) # [B]
-    self.j = tf.placeholder(tf.int32, [None,]) # [B]
-    self.y = tf.placeholder(tf.float32, [None,]) # [B]
-    self.hist_i = tf.placeholder(tf.int32, [None, None]) # [B, T]
-    self.sl = tf.placeholder(tf.int32, [None,]) # [B]
+    self.u = tf.placeholder(tf.int32, [None,]) # [B], user_id
+    self.i = tf.placeholder(tf.int32, [None,]) # [B], item_id
+    self.j = tf.placeholder(tf.int32, [None,]) # [B], ？
+    self.y = tf.placeholder(tf.float32, [None,]) # [B], label
+    self.hist_i = tf.placeholder(tf.int32, [None, None]) # [B, T], history items
+    self.sl = tf.placeholder(tf.int32, [None,]) # [B], sl[i]: the number of history items
     self.lr = tf.placeholder(tf.float64, [])
 
     hidden_units = 128
@@ -30,6 +30,7 @@ class Model(object):
         tf.nn.embedding_lookup(item_emb_w, self.i),
         tf.nn.embedding_lookup(cate_emb_w, ic),
         ], axis=1)
+
     i_b = tf.gather(item_b, self.i)
 
     jc = tf.gather(cate_list, self.j)
@@ -37,6 +38,7 @@ class Model(object):
         tf.nn.embedding_lookup(item_emb_w, self.j),
         tf.nn.embedding_lookup(cate_emb_w, jc),
         ], axis=1)
+
     j_b = tf.gather(item_b, self.j)
 
     hc = tf.gather(cate_list, self.hist_i)
@@ -53,11 +55,11 @@ class Model(object):
     hist = tf.layers.dense(hist, hidden_units)
 
     u_emb = hist
-    print u_emb.get_shape().as_list()
-    print i_emb.get_shape().as_list()
-    print j_emb.get_shape().as_list()
+    print("u_emb.shape",u_emb.get_shape().as_list())
+    print("i_emb.shape",i_emb.get_shape().as_list())
+    print("j_emb.shape",j_emb.get_shape().as_list())
     #-- fcn begin -------
-    din_i = tf.concat([u_emb, i_emb], axis=-1)
+    din_i = tf.concat([u_emb, i_emb], axis=-1) # u_emb = hist
     din_i = tf.layers.batch_normalization(inputs=din_i, name='b1')
     d_layer_1_i = tf.layers.dense(din_i, 80, activation=tf.nn.sigmoid, name='f1')
     #if u want try dice change sigmoid to None and add dice layer like following two lines. You can also find model_dice.py in this folder.
@@ -104,7 +106,7 @@ class Model(object):
     self.score_i = tf.reshape(self.score_i, [-1, 1])
     self.score_j = tf.reshape(self.score_j, [-1, 1])
     self.p_and_n = tf.concat([self.score_i, self.score_j], axis=-1)
-    print self.p_and_n.get_shape().as_list()
+    print("p_and_n.shape",self.p_and_n.get_shape().as_list())
 
 
     # Step variable
@@ -130,22 +132,22 @@ class Model(object):
 
   def train(self, sess, uij, l):
     loss, _ = sess.run([self.loss, self.train_op], feed_dict={
-        self.u: uij[0],
-        self.i: uij[1],
-        self.y: uij[2],
-        self.hist_i: uij[3],
-        self.sl: uij[4],
+        self.u: uij[0], # user_id
+        self.i: uij[1], # item_id
+        self.y: uij[2], # lable
+        self.hist_i: uij[3], #item history
+        self.sl: uij[4], # each element denoting the number of history items, the number of elements of `sl` is batch size
         self.lr: l,
         })
     return loss
 
   def eval(self, sess, uij):
     u_auc, socre_p_and_n = sess.run([self.mf_auc, self.p_and_n], feed_dict={
-        self.u: uij[0],
-        self.i: uij[1],
-        self.j: uij[2],
-        self.hist_i: uij[3],
-        self.sl: uij[4],
+        self.u: uij[0], # user
+        self.i: uij[1], # positive label, item
+        self.j: uij[2], # nagetive label
+        self.hist_i: uij[3], # 
+        self.sl: uij[4],# 
         })
     return u_auc, socre_p_and_n
 

@@ -4,6 +4,10 @@ import numpy as np
 
 random.seed(1234)
 
+# reviewerID : ID of the reviewer
+# asin: ID of the product,
+# categories:  list of categories the product belongs to
+
 with open('../raw_data/reviews.pkl', 'rb') as f:
   reviews_df = pickle.load(f)
   reviews_df = reviews_df[['reviewerID', 'asin', 'unixReviewTime']]

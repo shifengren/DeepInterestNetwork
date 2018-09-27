@@ -13,7 +13,7 @@ class DataInput:
   def __iter__(self):
     return self
 
-  def next(self):
+  def __next__(self):
 
     if self.i == self.epoch_size:
       raise StopIteration
@@ -24,13 +24,13 @@ class DataInput:
 
     u, i, y, sl = [], [], [], []
     for t in ts:
-      u.append(t[0])
-      i.append(t[2])
-      y.append(t[3])
-      sl.append(len(t[1]))
+      u.append(t[0]) # user_id
+      i.append(t[2]) # item_id
+      y.append(t[3]) # label
+      sl.append(len(t[1])) # t[1], 前 i 个商品
     max_sl = max(sl)
 
-    hist_i = np.zeros([len(ts), max_sl], np.int64)
+    hist_i = np.zeros([len(ts), max_sl], np.int64) # batch, 
 
     k = 0
     for t in ts:
@@ -64,10 +64,10 @@ class DataInputTest:
 
     u, i, j, sl = [], [], [], []
     for t in ts:
-      u.append(t[0])
-      i.append(t[2][0])
-      j.append(t[2][1])
-      sl.append(len(t[1]))
+      u.append(t[0]) # user_id
+      i.append(t[2][0]) # positive label
+      j.append(t[2][1]) # negative label
+      sl.append(len(t[1])) # history items
     max_sl = max(sl)
 
     hist_i = np.zeros([len(ts), max_sl], np.int64)
